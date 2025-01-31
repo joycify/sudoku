@@ -1,0 +1,142 @@
+// Sudoku Game in JavaScript
+
+class SudokuGame {
+  constructor() {
+    this.GRID_SIZE = 9;
+    this.board = Array.from({ length: this.GRID_SIZE }, () => Array(this.GRID_SIZE).fill(0));
+    this.generateFullBoard();
+    this.createPlayablePuzzle();
+    this.playGame();
+  }
+
+  generateFullBoard() {
+    this.fillBoard(0, 0);
+  }
+
+  fillBoard(row, col) {
+    if (row === this.GRID_SIZE) return true;
+
+    const nextRow = col === this.GRID_SIZE - 1 ? row + 1 : row;
+    const nextCol = col === this.GRID_SIZE - 1 ? 0 : col + 1;
+
+    if (this.board[row][col] !== 0) return this.fillBoard(nextRow, nextCol);
+
+    const numbers = this.shuffle([...Array(9).keys()].map(n => n + 1));
+
+    for (const number of numbers) {
+      if (this.isValidMove(row, col, number)) {
+        this.board[row][col] = number;
+        if (this.fillBoard(nextRow, nextCol)) return true;
+        this.board[row][col] = 0;
+      }
+    }
+    return false;
+  }
+
+  shuffle(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  }
+
+  createPlayablePuzzle() {
+    let cellsToRemove = 40;
+
+    while (cellsToRemove > 0) {
+      const row = Math.floor(Math.random() * this.GRID_SIZE);
+      const col = Math.floor(Math.random() * this.GRID_SIZE);
+
+      if (this.board[row][col] !== 0) {
+        this.board[row][col] = 0;
+        cellsToRemove--;
+      }
+    }
+  }
+
+  playGame() {
+    this.printBoard();
+    let complete = false;
+
+    while (!complete) {
+      const input = prompt("Enter your move (row [1-9] column [1-9] number [1-9]) or type 'exit':");
+      if (input === "exit") break;
+
+      const [row, col, number] = input.split(" ").map(Number);
+
+      if (
+        row >= 1 && row <= 9 &&
+        col >= 1 && col <= 9 &&
+        number >= 1 && number <= 9
+      ) {
+        if (this.isValidMove(row - 1, col - 1, number)) {
+          this.board[row - 1][col - 1] = number;
+        } else {
+          console.log("Invalid move. Try again.");
+        }
+      } else {
+        console.log("Invalid input. Enter numbers between 1 and 9.");
+      }
+
+      this.printBoard();
+      complete = this.isBoardComplete();
+    }
+
+    if (complete) console.log("Congratulations! You've completed the Sudoku.");
+  }
+
+  printBoard() {
+    console.clear();
+    for (let row = 0; row < this.GRID_SIZE; row++) {
+      if (row % 3 === 0 && row !== 0) console.log("-----------");
+
+      let line = "";
+      for (let col = 0; col < this.GRID_SIZE; col++) {
+        if (col % 3 === 0 && col !== 0) line += "|";
+        line += this.board[row][col] === 0 ? " ." : ` ${this.board[row][col]}`;
+      }
+      console.log(line);
+    }
+  }
+
+  isBoardComplete() {
+    for (let row = 0; row < this.GRID_SIZE; row++) {
+      for (let col = 0; col < this.GRID_SIZE; col++) {
+        if (this.board[row][col] === 0) return false;
+      }
+    }
+    return true;
+  }
+
+  isValidMove(row, col, number) {
+    if (this.board[row][col] !== 0) return false;
+    return (
+      !this.isInRow(row, number) &&
+      !this.isInCol(col, number) &&
+      !this.isInBox(row, col, number)
+    );
+  }
+
+  isInRow(row, number) {
+    return this.board[row].includes(number);
+  }
+
+  isInCol(col, number) {
+    return this.board.some(row => row[col] === number);
+  }
+
+  isInBox(row, col, number) {
+    const boxRowStart = row - (row % 3);
+    const boxColStart = col - (col % 3);
+
+    for (let r = boxRowStart; r < boxRowStart + 3; r++) {
+      for (let c = boxColStart; c < boxColStart + 3; c++) {
+        if (this.board[r][c] === number) return true;
+      }
+    }
+    return false;
+  }
+}
+
+new SudokuGame();
